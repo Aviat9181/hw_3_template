@@ -1,0 +1,18 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: docker-app:6b
+    ports:
+      - "${APP_PORT}:${PORT}"
+    environment:
+      PORT:      ${PORT}
+      GREETING:  ${GREETING}
+      STORAGE:   sqlite
+      DATA_FILE: /data/counter.db
+    volumes:
+      - app-data:/data
+
+volumes:
+  app-data:
