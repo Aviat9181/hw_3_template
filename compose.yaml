@@ -3,16 +3,43 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: docker-app:6b
+    image: docker-app:8b
     ports:
       - "${APP_PORT}:${PORT}"
     environment:
       PORT:      ${PORT}
       GREETING:  ${GREETING}
-      STORAGE:   sqlite
-      DATA_FILE: /data/counter.db
+      STORAGE:   ${STORAGE}
+      REDIS_URL: ${REDIS_URL}
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ.get('PORT','8000')+'/healthz', timeout=2)\""]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
     volumes:
       - app-data:/data
-
+  redis:
+    image: redis:7.4-alpine
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --appendfsync
+      - everysec
+      - --dir
+      - /data
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
 volumes:
   app-data:
+  redis-data:
